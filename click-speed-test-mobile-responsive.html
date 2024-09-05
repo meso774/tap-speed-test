@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>タップスピードテスト</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .game-container {
+            text-align: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 400px;
+        }
+        #clickArea {
+            width: 100%;
+            height: 200px;
+            color: white;
+            font-size: 24px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-bottom: 10px;
+            touch-action: manipulation;
+        }
+        #clickArea:hover {
+            opacity: 0.9;
+        }
+        #clickArea:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #playAgain {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none;
+        }
+        #playAgain:hover {
+            background-color: #45a049;
+        }
+        #highScore {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .progress-container {
+            width: 100%;
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            margin-top: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        #progressBar {
+            height: 100%;
+            width: 0%;
+            background-color: #4CAF50;
+            position: absolute;
+            left: 0;
+            transition: width 0.3s ease;
+        }
+        #progressHighScore {
+            height: 100%;
+            width: 2px;
+            background-color: #FFA500;
+            position: absolute;
+            right: 0;
+            transition: right 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>タップスピードテスト</h1>
+        <p>10秒間で何回タップできるか挑戦しよう！</p>
+        <button id="clickArea">スタート</button>
+        <button id="playAgain">もう一度プレイ</button>
+        <p id="timeLeft"></p>
+        <p id="clickCount"></p>
+        <p id="result"></p>
+        <p id="highScore">最高記録: 0 回</p>
+        <div class="progress-container">
+            <div id="progressBar"></div>
+            <div id="progressHighScore"></div>
+        </div>
+    </div>
+
+    <script>
+        const clickArea = document.getElementById('clickArea');
+        const playAgain = document.getElementById('playAgain');
+        const timeLeft = document.getElementById('timeLeft');
+        const clickCount = document.getElementById('clickCount');
+        const result = document.getElementById('result');
+        const highScore = document.getElementById('highScore');
+        const progressBar = document.getElementById('progressBar');
+        const progressHighScore = document.getElementById('progressHighScore');
+
+        let count = 0;
+        let timer;
+        let gameTime = 10;
+        let isGameRunning = false;
+        let bestScore = 0;
+
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        const actionWord = isMobile ? 'タップ' : 'クリック';
+
+        clickArea.addEventListener('click', handleClick);
+        playAgain.addEventListener('click', startGame);
+
+        function handleClick() {
+            if (!isGameRunning) {
+                startGame();
+            } else {
+                count++;
+                clickCount.textContent = `${actionWord}数: ${count}`;
+                updateButtonColor();
+                updateProgressBar();
+            }
+        }
+
+        function startGame() {
+            isGameRunning = true;
+            count = 0;
+            gameTime = 10;
+            clickArea.textContent = `${actionWord}！`;
+            clickCount.textContent = `${actionWord}数: 0`;
+            result.textContent = '';
+            timeLeft.textContent = `残り時間: ${gameTime}秒`;
+            playAgain.style.display = 'none';
+            clickArea.disabled = false;
+            updateButtonColor();
+            updateProgressBar();
+
+            timer = setInterval(() => {
+                gameTime--;
+                timeLeft.textContent = `残り時間: ${gameTime}秒`;
+
+                if (gameTime <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function endGame() {
+            clearInterval(timer);
+            isGameRunning = false;
+            clickArea.textContent = '終了！';
+            clickArea.disabled = true;
+            timeLeft.textContent = '';
+            result.textContent = `結果: 10秒間で${count}回${actionWord}しました！`;
+            playAgain.style.display = 'inline-block';
+
+            if (count > bestScore) {
+                bestScore = count;
+                highScore.textContent = `最高記録: ${bestScore} 回`;
+                updateProgressBar();
+            }
+        }
+
+        function updateButtonColor() {
+            const hue = Math.min(count * 2, 120); // 0 (赤) から 120 (緑) までの範囲
+            clickArea.style.backgroundColor = `hsl(${hue}, 100%, 50%)`;
+        }
+
+        function updateProgressBar() {
+            const maxPossibleClicks = 120; // 理論上の最大クリック数（1秒あたり12クリックと仮定）
+            const currentWidth = (count / maxPossibleClicks) * 100;
+            const highScoreWidth = (bestScore / maxPossibleClicks) * 100;
+
+            progressBar.style.width = `${currentWidth}%`;
+            progressHighScore.style.right = `${100 - highScoreWidth}%`;
+        }
+
+        updateButtonColor(); // 初期色を設定
+        updateProgressBar(); // 初期プログレスバーを設定
+    </script>
+</body>
+</html>
